@@ -1,0 +1,89 @@
+
+
+.gitignore
+.venv/
+.idea/
+__pycache__/
+.DS_Store
+.vscode/
+.python-version
+.config_secret/
+
+settings.py
+with open(BASE_DIR / '.config_secret' / 'secret.json') as f:
+    config_secret_str = f.read()
+SECRET = json.loads(config_secret_str)  # json 형태를 딕셔너리 형태로 바꿈
+
+SECRET_KEY = SECRET['DJANGO_SECRET_KEY']
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',  # 사용 DB에 따라 변경
+        'NAME': SECRET["DB"]["NAME"],
+        'USER': SECRET["DB"]["USER"],
+        'PASSWORD': SECRET["DB"]["PASSWORD"],
+        'HOST': SECRET["DB"]["HOST"],
+        'PORT': SECRET["DB"]["PORT"],  # 숫자일 경우 str() 필요 없음
+    }
+}
+
+.config_secret/secret.json
+{
+  "DJANGO_SECRET_KEY" : "django-insecure-i^c1=q$ax&)#nw93_igf9q081ug$et6+r_8kk^v&!lv-xpv#2n",
+  "DB": {
+    "HOST": "localhost",
+    "PORT": 3306,
+    "NAME": "restaurant_review",
+    "USER": "root",
+    "PASSWORD": "1234"
+  }
+}
+
+
+요구조건
+
+- User
+    - AbstractBaseUser, PermissionsMixin을 상속받아 사용
+        - is_superuser, password, last_login 등의 필드가 내재되어 있음
+    - add fields
+        - nickname - CharField(max_length=20, unique=True)
+        - email - EmailField(max_length=40, unique=True)
+        - profile_image - ImageField(upload_to=’users/profile_images’, default=’users/blank_profile_image.png’)
+            - blank_profile_image.png 는 구글 검색을 통해서 다운로드 받아서 사용.
+
+- BaseModel
+    - config / models.py 에 선언
+    - fields
+        - created_at - DatetimeField(auto_now_add=True)
+        - modified_at - DatetimeField(auto_now=True)
+- Restaurant
+    - BaseModel을 상속받아 사용
+    - fields
+        - name - CharField(max_length=50)
+        - address - CharField(max_length=200)
+        - contact - CharField(max_length=50)
+        - open_time - TimeField(null=True, blank=True)
+        - close_time - TimeField(null=True, blank=True)
+        - last_order - TimeField(null=True, blank=True)
+        - regular_holiday - CharField(choice=DAYS_OF_WEEK, null=True, blank=True)
+
+            ```markdown
+            DAYS_OF_WEEK = [
+                    ('MON', 'Monday'),
+                    ('TUE', 'Tuesday'),
+                    ('WED', 'Wednesday'),
+                    ('THU', 'Thursday'),
+                    ('FRI', 'Friday'),
+                    ('SAT', 'Saturday'),
+                    ('SUN', 'Sunday'),
+                ]
+            ```
+
+
+- Review
+    - BaseModel을 상속받아 사용
+    - fields
+        - user = ForeignKey(User, on_delete=models.CASCADE)
+        - restaurant = ForeignKey(Restaurant, on_delete=models.CASCADE)
+        - title = CharField(max_length=50)
+        - comment = TextField()
